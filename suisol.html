@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Investment Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc;
+        }
+    </style>
+</head>
+<body class="p-6 bg-gray-50">
+
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center">
+        <div>
+            <h1 class="text-2xl font-bold">SUI & SOL Investment Tracker</h1>
+            <p class="text-gray-500">Track current prices, market caps, and your holdings</p>
+        </div>
+        <div class="mt-4 sm:mt-0 text-sm text-gray-500">
+            Data from CoinGecko | Charting by TradingView
+        </div>
+    </div>
+    <hr class="my-4"/>
+
+    <!-- Current Data Section -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="data-section">
+        <div class="bg-gray-50 p-4 rounded-md border">
+            <h2 class="text-lg font-semibold text-gray-700 flex items-center space-x-2 mb-2">
+                <img src="https://assets.coingecko.com/coins/images/4128/small/solana.png" alt="SOL" class="w-6 h-6">
+                <span>Solana (SOL)</span>
+            </h2>
+            <p class="text-gray-600">Rank: <span id="sol-rank" class="font-semibold">-</span></p>
+            <p class="text-gray-600">Price: $<span id="sol-price" class="font-semibold">-</span></p>
+            <p class="text-gray-600">Market Cap: $<span id="sol-mcap" class="font-semibold">-</span></p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-md border">
+            <h2 class="text-lg font-semibold text-gray-700 flex items-center space-x-2 mb-2">
+                <img src="https://assets.coingecko.com/coins/images/24405/small/sui.png" alt="SUI" class="w-6 h-6">
+                <span>SUI</span>
+            </h2>
+            <p class="text-gray-600">Rank: <span id="sui-rank" class="font-semibold">-</span></p>
+            <p class="text-gray-600">Price: $<span id="sui-price" class="font-semibold">-</span></p>
+            <p class="text-gray-600">Market Cap: $<span id="sui-mcap" class="font-semibold">-</span></p>
+        </div>
+    </div>
+
+    <!-- User Holdings Input -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="border rounded-md p-4">
+            <label for="solAmount" class="block text-gray-700 font-medium mb-1">Your SOL Holdings:</label>
+            <input id="solAmount" type="number" min="0" step="any" placeholder="Enter amount of SOL you own" class="w-full p-2 border rounded-md" oninput="updatePortfolioValue()">
+        </div>
+        <div class="border rounded-md p-4">
+            <label for="suiAmount" class="block text-gray-700 font-medium mb-1">Your SUI Holdings:</label>
+            <input id="suiAmount" type="number" min="0" step="any" placeholder="Enter amount of SUI you own" class="w-full p-2 border rounded-md" oninput="updatePortfolioValue()">
+        </div>
+    </div>
+
+    <!-- Portfolio Value -->
+    <div class="bg-gray-100 p-4 rounded-md border text-center">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Your Total Portfolio Value</h3>
+        <p class="text-2xl font-bold text-green-600">$<span id="portfolio-value">0.00</span></p>
+    </div>
+
+    <!-- Market Cap Pie Chart -->
+    <div>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Market Cap Comparison</h2>
+        <canvas id="marketCapChart" class="w-full"></canvas>
+    </div>
+
+    <!-- TradingView Chart -->
+    <div class="mt-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Price Chart (SOL)</h2>
+        <div id="tradingview-chart" class="w-full h-96"></div>
+    </div>
+
+</div>
+
+<!-- External Scripts -->
+<script>
+// Global variables to store fetched data
+let solPrice = 0;
+let suiPrice = 0;
+
+// Update Portfolio Value
+function updatePortfolioValue() {
+    const solAmount = parseFloat(document.getElementById('solAmount').value) || 0;
+    const suiAmount = parseFloat(document.getElementById('suiAmount').value) || 0;
+
+    const totalValue = (solAmount * solPrice) + (suiAmount * suiPrice);
+    document.getElementById('portfolio-value').textContent = totalValue.toFixed(2);
+}
+
+// Fetch data from CoinGecko
+async function fetchData() {
+    // CoinGecko API endpoint for SOL and SUI
+    const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana%2Csui';
+    const response = await fetch(url);
+    const data = await response.json();
+
+    let solData = data.find(c => c.id === 'solana');
+    let suiData = data.find(c => c.id === 'sui');
+
+    // Update price and market cap variables
+    solPrice = solData.current_price;
+    suiPrice = suiData.current_price;
+
+    // Update DOM
+    document.getElementById('sol-price').textContent = solData.current_price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('sol-mcap').textContent = solData.market_cap.toLocaleString('en-US');
+    document.getElementById('sol-rank').textContent = solData.market_cap_rank;
+
+    document.getElementById('sui-price').textContent = suiData.current_price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('sui-mcap').textContent = suiData.market_cap.toLocaleString('en-US');
+    document.getElementById('sui-rank').textContent = suiData.market_cap_rank;
+
+    updatePortfolioValue();
+    updateChart(solData.market_cap, suiData.market_cap);
+}
+
+// Chart.js Pie Chart for Market Cap
+let marketCapChart;
+function initChart() {
+    const ctx = document.getElementById('marketCapChart').getContext('2d');
+    marketCapChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Solana (SOL)', 'SUI'],
+            datasets: [{
+                label: 'Market Cap',
+                data: [0, 0],
+                backgroundColor: ['#6366F1', '#F87171'], 
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+function updateChart(solMCap, suiMCap) {
+    marketCapChart.data.datasets[0].data = [solMCap, suiMCap];
+    marketCapChart.update();
+}
+
+// Initialize Chart
+initChart();
+fetchData();
+
+// Refresh Data every 60 seconds
+setInterval(fetchData, 60000);
+
+// TradingView Widget
+(function() {
+    const script = document.createElement('script');
+    script.src = "https://s3.tradingview.com/tv.js";
+    script.async = true;
+    script.onload = function() {
+        new TradingView.widget({
+            "container_id": "tradingview-chart",
+            "width": "100%",
+            "height": "100%",
+            "symbol": "BINANCE:SOLUSDT",
+            "interval": "D",
+            "timezone": "Etc/UTC",
+            "theme": "light",
+            "style": "1",
+            "locale": "en",
+            "enable_publishing": false,
+            "allow_symbol_change": true,
+            "show_popup_button": true,
+            "popup_width": "1000",
+            "popup_height": "650",
+            "overrides": {
+                "paneProperties.background": "#FFFFFF",
+                "paneProperties.vertGridProperties.color": "#E3E3E3",
+                "paneProperties.horzGridProperties.color": "#E3E3E3"
+            }
+        });
+    };
+    document.body.appendChild(script);
+})();
+</script>
+
+</body>
+</html>
